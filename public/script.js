@@ -41,11 +41,19 @@ function renderProjects() {
     editButton.textContent = "Edit";
     editButton.dataset.projectId = String(project.id);
 
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.textContent = "Delete";
+    deleteButton.dataset.projectId = String(project.id);
+    deleteButton.dataset.action = "delete";
+
     listItem.append(
       projectName,
       projectStatus,
       document.createTextNode(" "),
-      editButton
+      editButton,
+      document.createTextNode(" "),
+      deleteButton
     );
 
     projectList.appendChild(listItem);
@@ -102,17 +110,17 @@ projectForm.addEventListener("submit", (event) => {
   renderProjects();
 });
 
-// Select a project for editing using its stable ID.
+// Handle Edit and Delete button clicks.
 projectList.addEventListener("click", (event) => {
-  const editButton = event.target.closest(
+  const actionButton = event.target.closest(
     "button[data-project-id]"
   );
 
-  if (!editButton || !projectList.contains(editButton)) {
+  if (!actionButton || !projectList.contains(actionButton)) {
     return;
   }
 
-  const projectId = Number(editButton.dataset.projectId);
+  const projectId = Number(actionButton.dataset.projectId);
 
   const project = projects.find(
     (item) => item.id === projectId
@@ -123,6 +131,39 @@ projectList.addEventListener("click", (event) => {
     return;
   }
 
+  // Delete the selected project by its stable ID.
+  if (actionButton.dataset.action === "delete") {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${project.name}"?`
+    );
+
+    if (!confirmed) {
+      message.textContent = "Deletion cancelled.";
+      return;
+    }
+
+    const projectIndex = projects.findIndex(
+      (item) => item.id === projectId
+    );
+
+    if (projectIndex === -1) {
+      message.textContent = "Project not found.";
+      return;
+    }
+
+    projects.splice(projectIndex, 1);
+
+    // If the deleted project was being edited, exit edit mode.
+    if (editingId === projectId) {
+      resetForm();
+    }
+
+    message.textContent = `Project "${project.name}" deleted.`;
+    renderProjects();
+    return;
+  }
+
+  // Select a project for editing.
   editingId = project.id;
 
   nameInput.value = project.name;
